@@ -1,0 +1,43 @@
+{
+  "name": "@sandsoftwaresolutions/fuzzy-find",
+  "version": "0.1.0",
+  "description": "Fuzzy search for menus and pickers: ranked results, accents ignored, matched letters to highlight.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "pack:check": "npm pack --dry-run"
+  },
+  "keywords": [
+    "fuzzy",
+    "search",
+    "autocomplete",
+    "command-palette"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SandSoftwareSolutions/ss-fuzzy-find.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SandSoftwareSolutions/ss-fuzzy-find/issues"
+  },
+  "homepage": "https://github.com/SandSoftwareSolutions/ss-fuzzy-find#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
