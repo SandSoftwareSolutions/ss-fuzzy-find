@@ -24,7 +24,7 @@ for (const hit of hits) {
 
 search(items, "gc", { key: ["title", "tags.main", (item) => item.code] });   // several fields, the best one counts
 
-score("fb", "FooBar");   // { score: 11.2, indexes: [0, 3] }  or null when the letters do not all appear in order
+score("fb", "FooBar");   // { score: 8.34, indexes: [0, 3] }  or null when the letters do not all appear in order
 ```
 
 ## How results are ranked
