@@ -15,16 +15,36 @@ function boundaryBonus(chars, i) {
   return 0;
 }
 
+const MAX_CELLS = 4_000_000; // n x m cells of the alignment table (about 64 MB); beyond that a quick leftmost match is used
+
+// A cheaper match for very long texts: each letter at its first place after the previous one (not always the best alignment).
+function greedy(q, t, eq) {
+  const indexes = [];
+  let j = 0;
+  for (const c of q) {
+    while (j < t.length && !eq(c, t[j])) j++;
+    if (j === t.length) return null;
+    indexes.push(j++);
+  }
+  let total = 0;
+  indexes.forEach((at, i) => {
+    total += 1 + boundaryBonus(t, at) + (q[i] === t[at] ? 0.05 : 0);
+    total += i === 0 ? -0.1 * at : at === indexes[i - 1] + 1 ? 5 : -0.3 * (at - indexes[i - 1] - 1);
+  });
+  return { score: Math.round((total - t.length * 0.01) * 1000) / 1000, indexes };
+}
+
 /**
  * How well `query` matches `text` as a fuzzy "letters in order" match, with the best alignment found. Returns `{ score, indexes }`
  * or `null` when the letters do not all appear in order. `indexes` are positions of the matched characters in `[...text]`.
  * Accents and case are ignored (`cafe` finds `Café`); `caseSensitive: true` turns the case rule on.
+ * Very long input (query length x text length above 4 million) gets a quick leftmost match instead of the best alignment, so memory stays bounded.
  * Scoring: matches at the start of words or after a camelCase hump and runs of consecutive letters score high; gaps cost a little;
  * among equal matches the shorter text wins.
  */
 export function score(query, text, { caseSensitive = false } = {}) {
   if (typeof query !== "string" || typeof text !== "string") throw new TypeError("fuzzy-find: query and text must be strings");
-  const q = [...query.replace(/\s+/g, "")];
+  const q = [...query.normalize("NFC").replace(/[\s\p{M}]+/gu, "")]; // marks of a decomposed query ("e" + accent) are ignored like in the text
   const t = [...text];
   if (q.length === 0) return { score: 0, indexes: [] };
   if (q.length > t.length) return null;
@@ -33,6 +53,7 @@ export function score(query, text, { caseSensitive = false } = {}) {
   const n = q.length;
   const m = t.length;
   const GAP = 0.3; // cost of every skipped character between two matches
+  if (n * m > MAX_CELLS) return greedy(q, t, eq);
   const NEG = -Infinity;
   // best[i][j]: the best score with q[i] placed exactly at t[j]; from[i][j]: where q[i-1] was placed in that best alignment.
   const best = Array.from({ length: n }, () => new Float64Array(m).fill(NEG));
@@ -89,6 +110,7 @@ export function score(query, text, { caseSensitive = false } = {}) {
  */
 export function search(items, query, { key, limit = Infinity, minScore = -Infinity, caseSensitive = false } = {}) {
   if (typeof query !== "string") throw new TypeError("fuzzy-find: query must be a string");
+  if (limit !== Infinity && !(Number.isInteger(limit) && limit >= 0)) throw new RangeError("fuzzy-find: limit must be a whole number of at least 0");
   const words = query.split(/\s+/).filter(Boolean);
   const keys = key === undefined ? [(x) => String(x)] : [].concat(key).map((k) => (typeof k === "function" ? k : (x) => getPath(x, k)));
   const results = [];

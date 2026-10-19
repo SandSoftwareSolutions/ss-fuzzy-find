@@ -105,3 +105,29 @@ test("it is fast enough for a command palette", () => {
   assert.ok(results.length > 0);
   assert.ok(Date.now() - started < 3000, `took ${Date.now() - started} ms`);
 });
+
+test("a decomposed query (letter + combining accent) finds the composed text and the other way around", () => {
+  assert.deepEqual(score("é", "é")?.indexes, [0]);
+  assert.deepEqual(score("é", "é")?.indexes, [0]);
+  assert.deepEqual(score("café", "Café")?.indexes, [0, 1, 2, 3]);
+});
+
+test("very long text: memory stays bounded and the result is still a valid in-order match", () => {
+  const text = "abcdefghij ".repeat(40000); // 440 000 characters x 100 query letters would be 44 million table cells
+  const query = "abcdefghij".repeat(10);
+  const before = process.memoryUsage().rss;
+  const start = Date.now();
+  const found = score(query, text);
+  assert.ok(found && found.indexes.length === 100);
+  assert.ok(found.indexes.every((at, i) => i === 0 || at > found.indexes[i - 1]));
+  assert.ok(found.indexes.every((at, i) => text[at] === query[i]));
+  assert.ok(Date.now() - start < 1000);
+  assert.ok(process.memoryUsage().rss - before < 150e6);
+  assert.equal(score("zzz", text), null);
+});
+
+test("limit must be a whole number of at least 0 (a negative limit used to drop the last result)", () => {
+  for (const bad of [-1, NaN, 2.5, "3"]) assert.throws(() => search(["a", "ab"], "a", { limit: bad }), RangeError);
+  assert.equal(search(["a", "ab"], "a", { limit: 0 }).length, 0);
+  assert.equal(search(["a", "ab"], "a", { limit: Infinity }).length, 2);
+});
