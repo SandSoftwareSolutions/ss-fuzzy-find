@@ -10,6 +10,8 @@ Type `gc` and find "**G**it **C**ommit". Fuzzy search like a command palette: ra
 npm install @sandsoftwaresolutions/fuzzy-find
 ```
 
+Works with `import` and `require()`, and ships TypeScript types for both.
+
 ## Usage
 
 ```js
